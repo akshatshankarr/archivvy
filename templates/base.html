@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}outreach{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='base-icon.png') }}">
+</head>
+<body>
+    <nav>
+        <a href = '/'> <right> HOME </right> </a>
+        <a href = 'init-archive'> MAKE ARCHIVE </a>
+    </nav>
+    <hr>
+    <div>
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

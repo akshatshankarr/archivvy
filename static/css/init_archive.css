@@ -1,0 +1,49 @@
+body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        button {
+            background: #1DB954;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #1ed760;
+        }
+        #playlist-id {
+            width: 300px;
+            padding: 0.5rem;
+            margin: 1rem 0;
+            border: 1px solid #ccc;
+        }
+        .status {
+            margin: 1rem 0;
+            color: #666;
+        }
+        .spinner {
+            display: none;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1DB954;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success {
+            color: #1DB954;
+        }
+        .error {
+            color: #d32f2f;
+        }

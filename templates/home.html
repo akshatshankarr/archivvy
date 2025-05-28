@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a href='/login'>Click here to login</a>
+<a href ='/get-tracks'> Click to add tracks </a>
+<form action="/init-archive" method="get" style="display: inline;">
+    <button type="submit">Click to make playlist</button>
+</form>
+<!--<a href="/init-archive">Click here to make playlist</a> -->
+<form action="/get-archive" method="post" style="display: inline;">
+    <input type="text" name="playlist_id" placeholder="Enter playlist ID" required>
+    <button type="submit">Add Tracks to Playlist</button>
+</form>
+{%endblock%}
+
+<!-- <a href="/init-archive" style="display: inline-block; padding: 0.5em 1.5em; 
+background: #1DB954; color: white; border-radius: 4px; text-decoration: none; 
+font-weight: bold;">Click here to make playlist</a> <br> button esque link
+-->

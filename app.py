@@ -1,59 +1,20 @@
-from flask import Flask, redirect, request, jsonify, session
-import os, urllib, requests, json
-from dotenv import load_dotenv
+from flask import Flask, render_template, redirect, request, jsonify, session
+import urllib, requests, json
 from datetime import datetime, date
 import sqlite3
 
-#estabilishing connection to sqlite db
-conn = sqlite3.connect('e:/cline/zvenv/outreach-flask/artistrecords.sqlite', check_same_thread=False)
-curr = conn.cursor()
-
-curr.executescript('''
-  drop table if exists recently_played_songs;
-  drop table if exists recently_played_artists;
-  
-  CREATE TABLE recently_played_artists(
-    artist_id TEXT PRIMARY KEY NOT NULL,
-    name TEXT UNIQUE NOT NULL
-  );
-  CREATE TABLE recently_played_songs(
-    track_id TEXT NOT NULL,
-    art_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    album_cover TEXT NOT NULL,
-    FOREIGN KEY(art_id) REFERENCES recently_played_artists(artist_id)
-  );
-''')
-
-load_dotenv()
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = 'http://localhost:5000/callback'
-
-AUTH_URL = 'https://accounts.spotify.com/authorize/'
-TOKEN_URL = 'https://accounts.spotify.com/api/token/'
-API_QUERY_URL = 'https://api.spotify.com/v1/'
+from config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, AUTH_URL, TOKEN_URL, API_QUERY_URL, DB_PATH
+from db_helper import init_db
 
 app = Flask(__name__)
-app.secret_key = os.getenv("CLIENT_SECRET")
+app.secret_key = CLIENT_SECRET
 
-#landing page: login, make playlist, add tracks.
 @app.route("/")
 def home():
-  return '''<a href='/login'>Click here to login</a>
-    <form action="/init-archive" method="post" style="display: inline;">
-      <button type="submit">Click here to make playlist</button>
-    </form>
-    <form action="/get-archive" method="post" style="display: inline;">
-      <input type="text" name="playlist_id" placeholder="Enter playlist ID" required>
-      <button type="submit">Add Tracks to Playlist</button>
-    </form>
-    '''
+  return render_template('home.html')
 
-#login page
 @app.route("/login")
 def login():
-  #set scope according to app needs
   scope = '''
     user-read-private 
     user-read-email 
@@ -74,7 +35,6 @@ def login():
 
   return redirect(auth_url)
 
-#callback for the webapp
 @app.route("/callback")
 def callback():
   if 'error' in request.args:
@@ -96,11 +56,11 @@ def callback():
     session['expires_at'] = datetime.now().timestamp() + token_info['expires_in']
     print(datetime.now().timestamp())
     print(session['expires_at'])
-    return redirect('/recently-played-tracks')
-  
-#get x number of recently played tracks
-@app.route('/recently-played-tracks')
-def get_recently_played():
+
+    return redirect('/')
+
+@app.route('/get-tracks')
+def get_tracks():
   if 'access_token' not in session:
     return redirect('/login')
   
@@ -111,99 +71,115 @@ def get_recently_played():
     'Authorization': f"Bearer {session['access_token']}"
   }
 
-  recently_played_response = requests.get(API_QUERY_URL + 'me/player/recently-played?limit=50', headers=headers)          #change limit accordingly
-  parsed = json.loads(recently_played_response.text)
+  get_tracks_response = requests.get(API_QUERY_URL + 'me/player/recently-played?limit=50', headers=headers)          #change limit accordingly or pass a count
+  body = json.loads(get_tracks_response.text)
+  
+  init_db(DB_PATH)
+  with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+    curr = conn.cursor
+    for item in body['items']:
+      artist = item['track']['artists'][0]
+      curr.execute('insert or ignore into recently_played_artists (artist_id, name) values (?,?)', (artist['id'], artist['name'],))
+      track = item['track']
+      album_cover = track['album']['images'][0]['url']
+      curr.execute('insert into recently_played_songs (track_id,art_id,title,album_cover) values (?,?,?,?)', (track['id'], artist['id'], track['name'],album_cover,))
+      conn.commit()
+
+  ''' OLD FUNCTION, better for modifying and/or limit count
+      CURRENTLY USES 50 TRACKS UNLESS CHANGING LIMIT IN THE URI
+
   tracker = len(parsed['items'])
-  for i in range(12):
+
+  for i in range(tracker):                                                                                                     #change db parsing limit
     art_name = (parsed['items'][i]['track']['artists'][0]['name'])
     art_id = ((parsed['items'][i]['track']['artists'][0]['id']))
     track_name = (parsed['items'][i]['track']['name'])
     track_id = ((parsed['items'][i]['track']['id']))
     album_cover = (parsed['items'][i]['track']['album']['images'][0]['url'])
-    '''print(album_cover)
-    print(art_id)
-    print(art_name)                                                                                       --debug
-    print(track_id)
-    print(track_name)'''
     curr.execute('insert or ignore into recently_played_artists (artist_id, name) values (?,?)', (art_id, art_name,))
     curr.execute('insert into recently_played_songs (track_id,art_id,title,album_cover) values (?,?,?,?)', (track_id, art_id, track_name,album_cover,))
     conn.commit()                                                                                         #commit db changes after every iteration
-  playlists = recently_played_response.json()
-  return jsonify(playlists)
+    print(f'Inserted {track_name} to database')
+  conn.close()'''
 
-#creating the archiving playlist
+  #playlists = get_tracks_response.json()
+  #return jsonify(playlists)
+  return redirect('/')
+
+@app.route('/init-archive', methods=['GET'])
+def show_init_archive():
+  return render_template('init_archive.html')
+
 @app.route('/init-archive', methods=['POST'])
 def make_archive():
   if 'access_token' not in session:
-    return redirect('/login')
-  
+      return redirect('/login')
   if datetime.now().timestamp() > session['expires_at']:
-    return redirect('/refresh-token')
-  
+      return redirect('/refresh-token')
   headers = {
-    'Authorization': f"Bearer {session['access_token']}",
-    'Content-Type' : 'application/json'
+      'Authorization': f"Bearer {session['access_token']}",
+      'Content-Type': 'application/json'
   }
-
-  #getting userid
   user_response = requests.get(f'{API_QUERY_URL}me', headers=headers)
   user_id = user_response.json()['id']
 
-  #getting date for archive name
-  playlistName = 'Archive of ' + date.today().strftime('%b-%d-%Y')
+  '''   PRECAUTIONARY
+  if user_response.status_code != 200:
+    return jsonify({'message': 'Failed to get user info'}), user_response.status_code
+  if not user_id:
+    return jsonify({'message': 'User ID not found'}), 400
+  '''
 
-  #initializing playlist info
-  playlist_data={
-    'name': playlistName,
+  playlist_name = 'Archive of ' + date.today().strftime('%b-%d-%Y')
+  playlist_data = {
+    'name': playlist_name,
     'description': 'Archived {0}'.format(date.today().strftime('%B %d, %Y')),
     'public': False
   }
 
-  init_archvie_response = requests.post(f'{API_QUERY_URL}users/{user_id}/playlists', headers=headers, data=json.dumps(playlist_data))
-  playlist_id = init_archvie_response.json()['id']
+  init_archive_response = requests.post(f'{API_QUERY_URL}users/{user_id}/playlists', headers=headers,data = json.dumps(playlist_data))
+  playlist_id = init_archive_response.json()['id']
 
-  return jsonify({"playlist_id" : playlist_id, 'message': 'Copy this playlist id to paste in the form!'})
+  '''   PRECAUTIONARY
+  if init_archive_response.status_code not in (200, 201):
+    return jsonify({'message': 'Failed to create playlist'}), init_archive_response.status_code
+  if not playlist_id:
+    return jsonify({'message': 'Playlist ID not found'}), 400
+  '''
+  return jsonify({"playlist_id": playlist_id, 'message': 'Copy this playlist id to paste in the form!'})
 
-#add tracks to the archive
 @app.route('/get-archive', methods = ['POST'])
 def add_tracks_to_playlist():
+  if 'access_token' not in session:
+    return redirect('/login')
+  if datetime.now().timestamp() > session['expires_at']:
+    return redirect('/refresh-token')
+  
   playlist_id = request.form.get('playlist_id')
   if not playlist_id:
     return jsonify({'error': 'Playlist ID is required'}), 400
-  
-  if 'access_token' not in session:
-    return redirect('/login')
-  
-  if datetime.now().timestamp() > session['expires_at']:
-    return redirect('/refresh-token')
   
   headers={
     'Authorization': f"Bearer {session['access_token']}",
     'Content-Type' : 'application/json'
   }
   
-  #Replace with a separate copy of a database if multiple sessions to archive.
-  #connect = sqlite3.connect('e:/cline/zvenv/outreach-flask/artistrecords_indie.sqlite', check_same_thread=False)
-  #curr_indie = connect.cursor()
-  curr.execute('SELECT track_id FROM recently_played_songs')
-  trackid_cursor = curr.fetchall()
-  tracks_uris = [f'spotify:track:{track[0]}' for track in trackid_cursor]
+  with sqlite3.connect(DB_PATH) as conn:
+    curr = conn.cursor()
+    curr.execute('SELECT track_id FROM recently_played_songs')
+    track_uris = [f'spotify:track:{track[0]}' for track in reversed(curr.fetchall())]
+  
+  payload = {
+    'uris': track_uris
+  }
 
-  #iterating instead of at once to get reverse order in the playlist; can reverse uri array and pass all tracks at once.
-  for uri in tracks_uris:
-    payload = {
-      'uris': [uri],
-      'position': 0
-    }
-    print(payload)
-    get_archive_response = requests.post(f'{API_QUERY_URL}playlists/{playlist_id}/tracks', headers=headers, data=json.dumps(payload))
+  get_archive_response = requests.post(f'{API_QUERY_URL}playlists/{playlist_id}/tracks', headers=headers, data=json.dumps(payload))
 
-    if get_archive_response.status_code != 201:
-      return jsonify(get_archive_response.json(), get_archive_response.status_code)
-
+  if get_archive_response.status_code != 201:
+    return jsonify(get_archive_response.json(), get_archive_response.status_code)
+  
   return jsonify({'message': 'Tracks added successfully!'})
 
-#route to refresh the access token after expiry
 @app.route('/refresh-token')
 def refresh_token():
   if 'refresh_token' not in session:
@@ -222,7 +198,12 @@ def refresh_token():
     session['access_token'] = new_token_info['access_token']
     session['expires_at'] = datetime.now().timestamp() + new_token_info['expires_in']
 
-  return redirect('/recently-played-tracks')
+  return redirect('/')
+
+#debug
+@app.route('/routes')
+def show_routes():
+    return '<br>'.join([str(rule) for rule in app.url_map.iter_rules()])
   
 if __name__ == "__main__":
   app.run(host='0.0.0.0', debug=True)

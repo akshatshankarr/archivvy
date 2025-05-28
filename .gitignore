@@ -6,3 +6,5 @@
 *env
 *.sqlite
 /test.py
+/config.py
+/db_helper.py
