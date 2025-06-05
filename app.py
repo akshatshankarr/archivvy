@@ -22,7 +22,7 @@ def about():
 @app.route("/")
 def landing():
   if 'access_token' in session:
-    return render_template('home.html')
+    return redirect('/home')
   return render_template('landing.html')
 
 @app.route("/login")
