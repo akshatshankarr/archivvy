@@ -9,9 +9,21 @@ from db_helper import init_db
 app = Flask(__name__)
 app.secret_key = CLIENT_SECRET
 
-@app.route("/")
+@app.route("/home")
 def home():
+  if 'access_token' not in session:
+    return redirect('/')
   return render_template('home.html')
+
+@app.route("/about")
+def about():
+  return render_template('about.html')
+
+@app.route("/")
+def landing():
+  if 'access_token' in session:
+    return render_template('home.html')
+  return render_template('landing.html')
 
 @app.route("/login")
 def login():
@@ -57,7 +69,7 @@ def callback():
     print(datetime.now().timestamp())
     print(session['expires_at'])
 
-    return redirect('/')
+    return redirect('/home')
 
 @app.route('/get-tracks')
 def get_tracks():
@@ -76,7 +88,7 @@ def get_tracks():
   
   init_db(DB_PATH)
   with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
-    curr = conn.cursor
+    curr = conn.cursor()
     for item in body['items']:
       artist = item['track']['artists'][0]
       curr.execute('insert or ignore into recently_played_artists (artist_id, name) values (?,?)', (artist['id'], artist['name'],))
@@ -84,6 +96,11 @@ def get_tracks():
       album_cover = track['album']['images'][0]['url']
       curr.execute('insert into recently_played_songs (track_id,art_id,title,album_cover) values (?,?,?,?)', (track['id'], artist['id'], track['name'],album_cover,))
       conn.commit()
+    curr.execute('SELECT DISTINCT title, album_cover, track_id FROM recently_played_songs')
+    tracks = curr.fetchall()
+    print(tracks)
+
+  return render_template('tracks_added.html', tracks=tracks)
 
   ''' OLD FUNCTION, better for modifying and/or limit count
       CURRENTLY USES 50 TRACKS UNLESS CHANGING LIMIT IN THE URI
@@ -100,11 +117,11 @@ def get_tracks():
     curr.execute('insert into recently_played_songs (track_id,art_id,title,album_cover) values (?,?,?,?)', (track_id, art_id, track_name,album_cover,))
     conn.commit()                                                                                         #commit db changes after every iteration
     print(f'Inserted {track_name} to database')
-  conn.close()'''
+  conn.close()
 
-  #playlists = get_tracks_response.json()
-  #return jsonify(playlists)
-  return redirect('/')
+  playlists = get_tracks_response.json()
+  return jsonify(playlists)
+'''
 
 @app.route('/init-archive', methods=['GET'])
 def show_init_archive():
@@ -113,12 +130,12 @@ def show_init_archive():
 @app.route('/init-archive', methods=['POST'])
 def make_archive():
   if 'access_token' not in session:
-      return redirect('/login')
+    return redirect('/login')
   if datetime.now().timestamp() > session['expires_at']:
-      return redirect('/refresh-token')
+    return redirect('/refresh-token')
   headers = {
-      'Authorization': f"Bearer {session['access_token']}",
-      'Content-Type': 'application/json'
+    'Authorization': f"Bearer {session['access_token']}",
+    'Content-Type': 'application/json'
   }
   user_response = requests.get(f'{API_QUERY_URL}me', headers=headers)
   user_id = user_response.json()['id']
@@ -198,7 +215,18 @@ def refresh_token():
     session['access_token'] = new_token_info['access_token']
     session['expires_at'] = datetime.now().timestamp() + new_token_info['expires_in']
 
-  return redirect('/')
+  return redirect('/home')
+
+@app.route('/remove-track', methods=['POST'])
+def remove_track():
+    track_id = request.json.get('track_id')
+    if not track_id:
+        return jsonify({'success': False, 'error': 'No track_id provided'}), 400
+    with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
+        curr = conn.cursor()
+        curr.execute('DELETE FROM recently_played_songs WHERE track_id = ?', (track_id,))
+        conn.commit()
+    return jsonify({'success': True})
 
 #debug
 @app.route('/routes')

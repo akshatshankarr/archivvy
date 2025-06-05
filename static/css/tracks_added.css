@@ -1,0 +1,80 @@
+/*.remove_btn{
+    color: #fa5252;
+    background-color: #14181c;
+    opacity: 1;
+    border: none;
+}
+
+
+.remove_btn {
+    color: #fa5252;
+    background-color: #14181c;
+    border: none;
+    opacity: 1;
+    font-size: 1em;
+    margin-left: 1em;   Optional: space from title
+    transition: background 0.2s;
+}
+
+.remove_btn:hover{
+    cursor: pointer;
+}
+
+/*#tracks-list{
+    list-style-type: none;
+    padding-left: 10%
+}
+
+#tracks-list li {
+    display: flex;
+    align-items: center; Vertically centers image, title, and button
+    gap: 1em;            Space between items
+    margin-bottom: 1em;  Optional: space between rows
+}
+
+updated version*/
+
+#tracks-list {
+    list-style-type: none;
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5em;
+    margin: 2em auto;
+    max-width: 1200px; /* Optional: keeps grid from stretching too wide */
+}
+
+#tracks-list li {
+    background: #181c20;
+    border-radius: 10px;
+    padding: 1em;
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    min-width: 0;
+}
+
+#tracks-list img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.remove_btn {
+    color: #fa5252;
+    background-color: #14181c;
+    border: none;
+    font-size: 1em;
+    margin-left: auto; /* Pushes button to the right edge */
+    padding: 0.5em 1em;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.remove_btn:hover {
+    cursor: pointer;
+    background-color: #fa5252;
+    color: #fff;
+}

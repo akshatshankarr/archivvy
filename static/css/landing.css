@@ -1,0 +1,22 @@
+.login-button{
+    display: inline-block;
+    padding: 1em 4em;
+    background: #1ed760;
+    color: #111;
+    border: none;
+    border-radius: 999px;
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: none;
+}
+
+.login-button:hover{
+    background: #fa5252;
+}
+.landing-text{
+    text-align: center;
+}

@@ -1,12 +1,12 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Archive Playlist</title>
+{% extends "base.html" %}
+
+{% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/init_archive.css') }}">
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <h1>Create New Archive Playlist</h1>
-    
+
     <button onclick="createPlaylist()">
         <span class="spinner" id="spinner"></span>
         Create Archive Playlist
@@ -15,5 +15,4 @@
     <div class="status" id="status"></div>
     <input type="text" id="playlist-id" readonly style="display:none;">
     <script src="{{ url_for('static', filename='js/init_archive.js') }}"></script>
-</body>
-</html>
+{% endblock %}

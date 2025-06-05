@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+{% endblock %}
+
 {% block content %}
-<a href='/login'>Click here to login</a>
-<a href ='/get-tracks'> Click to add tracks </a>
-<form action="/init-archive" method="get" style="display: inline;">
-    <button type="submit">Click to make playlist</button>
-</form>
-<!--<a href="/init-archive">Click here to make playlist</a> -->
-<form action="/get-archive" method="post" style="display: inline;">
-    <input type="text" name="playlist_id" placeholder="Enter playlist ID" required>
-    <button type="submit">Add Tracks to Playlist</button>
-</form>
+    <div style="text-align: center;" > <!-- style="text-align: center;" -->
+        <h2>
+        <a href ='/get-tracks' class="centered-button"> View your tracks </a> <br>
+        <a href ='init-archive' class="centered-button"> Click to make playlist </a> <br>
+        <!--<form action="/init-archive" method="get" style="display: inline;">
+            <button type="submit" class="centered-button">Click to make playlist</button>
+        </form>-->
+        <!--<a href="/init-archive">Click here to make playlist</a> -->
+        <form action="/get-archive" method="post" style="display: inline;">
+            <input type="text" name="playlist_id" placeholder="Enter playlist ID" required>
+            <button type="submit">Add Tracks to Playlist</button>
+        </form>
+    </div>
+
 {%endblock%}
 
 <!-- <a href="/init-archive" style="display: inline-block; padding: 0.5em 1.5em; 

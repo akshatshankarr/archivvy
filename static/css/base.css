@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css?family=Poppins');
+
+body {
+    color: whitesmoke;
+    font-family: Poppins;
+    background-color: #14181c;
+}
+
+.content-container{
+    margin: 0 10em;
+}
+
+.navbar{
+    margin-top: 1em;
+    text-align: end;
+    margin-bottom: 2em;
+}
+
+a:visited {
+    text-decoration: none;
+}
+
+a{
+    text-decoration: none;
+}
+
+.right-button{
+    color: #fa5252;
+    background-color: #14181c;
+    border: none;
+    font-size: 1.25em;
+    margin-left: auto; /* Pushes button to the right edge */
+    padding: 0.25em 1em;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.right-button:hover {
+    cursor: pointer;
+    background-color: #fa5252;
+    color: #fff;
+}

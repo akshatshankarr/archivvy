@@ -2,15 +2,18 @@
 <html>
 <head>
     <title>{% block title %}outreach{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='base-icon.png') }}">
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href = '/'> <right> HOME </right> </a>
-        <a href = 'init-archive'> MAKE ARCHIVE </a>
+    <nav class="navbar">
+        <a href = '/home' class="right-button"> home </a>
+        <a href = '/about' class="right-button"> about </a>
+        <a href = '/privacy' class="right-button"> privacy </a>
+        <a href = '/logout' class="right-button"> logout </a>
     </nav>
-    <hr>
-    <div>
+    <div class="content-container">
         {% block content %}{% endblock %}
     </div>
 </body>
