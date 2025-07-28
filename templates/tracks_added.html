@@ -5,18 +5,16 @@
 {% endblock %}
 
 {% block content %}
-  <center>
-    <h3> Here's your recently played tracks!</h3>
-    <p> Click the x to remove the track from your archive</p>
-  </center>
+  <h3> Here's your recently played tracks!</h3>
+  <p> Click the x to remove the track from your archive</p>
   <ul id="tracks-list">
-      {% for title, album_cover, track_id in tracks %}
-        <li data-track-id="{{ track_id }}">
-          <img src="{{ album_cover }}" width="64" height="64">
-          {{ title }}
-          <button class="remove_btn">X</button>
-        </li>
-      {% endfor %}
+    {% for title, album_cover, track_id in tracks %}
+      <li data-track-id="{{ track_id }}">
+      <img src="{{ album_cover }}" width="64" height="64">
+      {{ title }}
+      <button class="remove_btn">X</button>
+    </li>
+    {% endfor %}
   </ul>
   <script src="{{ url_for('static', filename='js/get_tracks.js') }}"></script>
 {% endblock %}

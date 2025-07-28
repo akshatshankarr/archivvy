@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{url_for ('static', filename='css/privacy.css')}}">
+{% endblock %}
+
+{% block content %}
+<div class="privacy-container">
+    <h1>Privacy Policy</h1>
+
+    <h2>What Information Is Collected?</h2>
+    <ul>
+        <li>Outreach <strong>does not</strong> store any personal information that you may provide.</li>
+        <li>Any data accessed is used <strong>only</strong> to generate your playlists.</li>
+    </ul>
+    
+    <h2>How Is Your Data Used?</h2>
+    <ul>
+        <li>Your data is processed in real time to create your playlist.</li>
+        <li>Outreach does <strong>not</strong> save, share, or sell any of your information.</li>
+        <li>Once your playlist is generated, your data is not retained.</li>
+    </ul>
+    
+    <h2>Third-Party Services</h2>
+    <ul>
+        <li>Outreach uses the Spotify API to access your music data, with your explicit permission.</li>
+        <li>All permissions requested are solely for the purpose of generating your playlist.</li>
+    </ul>
+    
+    <h2>Your Control</h2>
+    <ul>
+        <li>You can revoke the access of this webapp to your Spotify account at any time through your 
+            <a href="http://www.spotify.com/account/apps/?_ga=2.57194153.2059435232.1677244602-1044990631.1616788427" target="_blank" rel="noopener noreferrer">
+                Spotify account settings</a>.
+        </li>
+        <li>
+            <a href="https://support.spotify.com/us/article/spotify-on-other-apps/" target="_blank" rel="noopener noreferrer">
+                Here</a> is a more detailed guide on doing so.
+        </li>
+    </ul>
+    
+    <p>If you have any concerns regarding the privacy control visit the <a href="/about"> about</a> section and feel free to contact me. </p>
+</div>
+{% endblock %}

@@ -1,20 +1,9 @@
 @import url('https://fonts.googleapis.com/css?family=Poppins');
 
-body {
+html {
     color: whitesmoke;
     font-family: Poppins;
     background-color: #14181c;
-}
-
-.content-container{
-    text-align: center;
-    margin: 0 10em;
-}
-
-.navbar{
-    margin-top: 1em;
-    text-align: end;
-    margin-bottom: 2em;
 }
 
 a:visited {
@@ -23,6 +12,12 @@ a:visited {
 
 a{
     text-decoration: none;
+}
+
+.navbar{
+    margin-top: 1em;
+    text-align: end;
+    margin-bottom: 2em;
 }
 
 .right-button{
@@ -40,4 +35,18 @@ a{
     cursor: pointer;
     background-color: #fa5252;
     color: #fff;
+}
+
+.content-container{
+    text-align: center;
+    margin: 0 15em;
+}
+
+.footer{
+    margin: 2em;
+    text-align: center;
+}
+
+.red{
+    color: #fa5252;
 }

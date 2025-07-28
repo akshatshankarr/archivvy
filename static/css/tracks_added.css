@@ -1,39 +1,3 @@
-/*.remove_btn{
-    color: #fa5252;
-    background-color: #14181c;
-    opacity: 1;
-    border: none;
-}
-
-
-.remove_btn {
-    color: #fa5252;
-    background-color: #14181c;
-    border: none;
-    opacity: 1;
-    font-size: 1em;
-    margin-left: 1em;   Optional: space from title
-    transition: background 0.2s;
-}
-
-.remove_btn:hover{
-    cursor: pointer;
-}
-
-/*#tracks-list{
-    list-style-type: none;
-    padding-left: 10%
-}
-
-#tracks-list li {
-    display: flex;
-    align-items: center; Vertically centers image, title, and button
-    gap: 1em;            Space between items
-    margin-bottom: 1em;  Optional: space between rows
-}
-
-updated version*/
-
 #tracks-list {
     list-style-type: none;
     padding-left: 0;
