@@ -7,4 +7,5 @@
 *.sqlite
 /test.py
 /config.py
-/db_helper.py 
+/db_helper.py
+/legacy_items
