@@ -25,6 +25,16 @@ def landing():
     return redirect('/home')
   return render_template('landing.html')
 
+@app.route("/privacy")
+def privacy():
+  return render_template('privacy.html')
+
+@app.route("/logout")
+def logout():
+  session.clear()
+  return redirect("/")
+
+
 @app.route("/login")
 def login():
   scope = '''
@@ -44,7 +54,6 @@ def login():
   }
 
   auth_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-
   return redirect(auth_url)
 
 @app.route("/callback")
@@ -83,8 +92,12 @@ def get_tracks():
     'Authorization': f"Bearer {session['access_token']}"
   }
 
-  get_tracks_response = requests.get(API_QUERY_URL + 'me/player/recently-played?limit=50', headers=headers)          #change limit accordingly or pass a count
-  body = json.loads(get_tracks_response.text)
+  response = requests.get(API_QUERY_URL + 'me/player/recently-played?limit=50', headers=headers)          #change limit accordingly or pass a count
+  if response:
+    print("success")
+  else:
+    print("gg")
+  body = json.loads(response.text)
   
   init_db(DB_PATH)
   with sqlite3.connect(DB_PATH, check_same_thread=False) as conn:
@@ -102,100 +115,53 @@ def get_tracks():
 
   return render_template('tracks_added.html', tracks=tracks)
 
-  ''' OLD FUNCTION, better for modifying and/or limit count
-      CURRENTLY USES 50 TRACKS UNLESS CHANGING LIMIT IN THE URI
-
-  tracker = len(parsed['items'])
-
-  for i in range(tracker):                                                                                                     #change db parsing limit
-    art_name = (parsed['items'][i]['track']['artists'][0]['name'])
-    art_id = ((parsed['items'][i]['track']['artists'][0]['id']))
-    track_name = (parsed['items'][i]['track']['name'])
-    track_id = ((parsed['items'][i]['track']['id']))
-    album_cover = (parsed['items'][i]['track']['album']['images'][0]['url'])
-    curr.execute('insert or ignore into recently_played_artists (artist_id, name) values (?,?)', (art_id, art_name,))
-    curr.execute('insert into recently_played_songs (track_id,art_id,title,album_cover) values (?,?,?,?)', (track_id, art_id, track_name,album_cover,))
-    conn.commit()                                                                                         #commit db changes after every iteration
-    print(f'Inserted {track_name} to database')
-  conn.close()
-
-  playlists = get_tracks_response.json()
-  return jsonify(playlists)
-'''
-
-@app.route('/init-archive', methods=['GET'])
-def show_init_archive():
-  return render_template('init_archive.html')
-
-@app.route('/init-archive', methods=['POST'])
-def make_archive():
+@app.route('/get-archive', methods = ['GET', 'POST'])
+def create_archive():
   if 'access_token' not in session:
     return redirect('/login')
   if datetime.now().timestamp() > session['expires_at']:
     return redirect('/refresh-token')
-  headers = {
-    'Authorization': f"Bearer {session['access_token']}",
-    'Content-Type': 'application/json'
-  }
-  user_response = requests.get(f'{API_QUERY_URL}me', headers=headers)
-  user_id = user_response.json()['id']
+  if request.method == 'GET':
+    return render_template('create_archive.html')
+  else:
+    #get user id
+    headers = {
+      'Authorization': f"Bearer {session['access_token']}",
+      'Content-Type': 'application/json'
+    }
+    user_response = requests.get(f'{API_QUERY_URL}me', headers=headers)
+    user_id = user_response.json()['id']
 
-  '''   PRECAUTIONARY
-  if user_response.status_code != 200:
-    return jsonify({'message': 'Failed to get user info'}), user_response.status_code
-  if not user_id:
-    return jsonify({'message': 'User ID not found'}), 400
-  '''
+    #create playlist
+    playlist_name = 'Archive of ' + date.today().strftime('%b-%d-%Y')
+    playlist_data = {
+      'name' : playlist_name,
+      'description' : f'Archived {date.today().strftime("%B, %d, %y")}',
+      'public' : False
+    }
 
-  playlist_name = 'Archive of ' + date.today().strftime('%b-%d-%Y')
-  playlist_data = {
-    'name': playlist_name,
-    'description': 'Archived {0}'.format(date.today().strftime('%B %d, %Y')),
-    'public': False
-  }
+    response = requests.post(f'{API_QUERY_URL}users/{user_id}/playlists', headers=headers, data=json.dumps(playlist_data))
+    
+    if response.status_code != 201:
+      return jsonify(response.json(), response.status_code)
+    playlist_id = response.json()['id']
 
-  init_archive_response = requests.post(f'{API_QUERY_URL}users/{user_id}/playlists', headers=headers,data = json.dumps(playlist_data))
-  playlist_id = init_archive_response.json()['id']
+    #add tracks to playlist
+    with sqlite3.connect(DB_PATH) as conn:
+        curr = conn.cursor()
+        curr.execute('SELECT track_id FROM recently_played_songs')
+        track_uris = [f'spotify:track:{track[0]}' for track in reversed(curr.fetchall())]
+      
+    payload = {
+      'uris': track_uris
+    }
 
-  '''   PRECAUTIONARY
-  if init_archive_response.status_code not in (200, 201):
-    return jsonify({'message': 'Failed to create playlist'}), init_archive_response.status_code
-  if not playlist_id:
-    return jsonify({'message': 'Playlist ID not found'}), 400
-  '''
-  return jsonify({"playlist_id": playlist_id, 'message': 'Copy this playlist id to paste in the form!'})
+    response = requests.post(f'{API_QUERY_URL}playlists/{playlist_id}/tracks', headers=headers, data=json.dumps(payload))
 
-@app.route('/get-archive', methods = ['POST'])
-def add_tracks_to_playlist():
-  if 'access_token' not in session:
-    return redirect('/login')
-  if datetime.now().timestamp() > session['expires_at']:
-    return redirect('/refresh-token')
-  
-  playlist_id = request.form.get('playlist_id')
-  if not playlist_id:
-    return jsonify({'error': 'Playlist ID is required'}), 400
-  
-  headers={
-    'Authorization': f"Bearer {session['access_token']}",
-    'Content-Type' : 'application/json'
-  }
-  
-  with sqlite3.connect(DB_PATH) as conn:
-    curr = conn.cursor()
-    curr.execute('SELECT track_id FROM recently_played_songs')
-    track_uris = [f'spotify:track:{track[0]}' for track in reversed(curr.fetchall())]
-  
-  payload = {
-    'uris': track_uris
-  }
-
-  get_archive_response = requests.post(f'{API_QUERY_URL}playlists/{playlist_id}/tracks', headers=headers, data=json.dumps(payload))
-
-  if get_archive_response.status_code != 201:
-    return jsonify(get_archive_response.json(), get_archive_response.status_code)
-  
-  return jsonify({'message': 'Tracks added successfully!'})
+    if response.status_code != 201:
+      return jsonify(response.json(), response.status_code)
+    
+    return render_template('get_archive.html', playlist_id = playlist_id)
 
 @app.route('/refresh-token')
 def refresh_token():
